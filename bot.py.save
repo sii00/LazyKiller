@@ -1,0 +1,13 @@
+666666from aiogram import Bot, Dispatcher, executor, types
+
+TOKEN = "8195031254:AAEBcXm4hpb6OA3cAFnrCs0mIonPUfzgbAg"
+
+bot = Bot(token=TOKEN)
+dp = Dispatcher(bot)
+
+@dp.message_handler(commands=['start'])
+async def start(message: types.Message):
+    await message.answer("🔥 Привет, я LazyKiller Bot. Готов прокачать твою дисциплину!")
+
+executor.start_polling(dp)
+

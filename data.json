@@ -1,0 +1,23 @@
+{
+  "user_state": {
+    "1877697611": {
+      "category": "masturbation",
+      "style": "soft",
+      "day": 2,
+      "done_days": 1,
+      "last_done_day": 1
+    }
+  },
+  "premium_profile": {
+    "1877697611": {}
+  },
+  "premium_enabled": [
+    1877697611
+  ],
+  "reminders": {
+    "1877697611": {
+      "time": "12:00",
+      "mode": "weekdays"
+    }
+  }
+}
