@@ -8,13 +8,10 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
 import os
 import json
-from openai import AsyncOpenAI
+import aiohttp  # вместо openai-клиента
 
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-
-client = AsyncOpenAI(api_key=OPENAI_API_KEY)
-
 
 dp = Dispatcher()
 
@@ -697,8 +694,9 @@ async def ai_coach_reply(user_id: int, user_message: str) -> Optional[str]:
     """
     Генерируем ответ от AI-коуча.
     Работает только если есть ключ и есть состояние.
+    Используем прямой HTTP-запрос к OpenAI через aiohttp.
     """
-    if not OPENAI_API_KEY or client is None:
+    if not OPENAI_API_KEY:
         return None
 
     state = user_state.get(user_id)
@@ -774,17 +772,35 @@ async def ai_coach_reply(user_id: int, user_message: str) -> Optional[str]:
         "Дай человеку ощущение, что его слышат, но при этом толкни к действию."
     )
 
+    payload = {
+        "model": "gpt-4.1-mini",
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_context},
+        ],
+        "temperature": 0.7,
+        "max_tokens": 300,
+    }
+
+    headers = {
+        "Authorization": f"Bearer {OPENAI_API_KEY}",
+        "Content-Type": "application/json",
+    }
+
     try:
-        resp = await client.chat.completions.create(
-            model="gpt-4.1-mini",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_context},
-            ],
-            temperature=0.7,
-            max_tokens=300,
-        )
-        answer = resp.choices[0].message.content.strip()
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers=headers,
+                json=payload,
+                timeout=60,
+            ) as resp:
+                if resp.status != 200:
+                    text = await resp.text()
+                    print("AI HTTP error:", resp.status, text)
+                    return None
+                data = await resp.json()
+        answer = data["choices"][0]["message"]["content"].strip()
         return answer
     except Exception as e:
         print("AI error:", e)
